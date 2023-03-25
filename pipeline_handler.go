@@ -8,10 +8,23 @@ import (
 	"golang.org/x/exp/slog"
 )
 
+var ErrPipelineInterrupted = fmt.Errorf("pipline interrupted")
+var ErrPipelineHalted = fmt.Errorf("pipeline halted")
+
+type ErrPipelineContinue struct {
+	Record slog.Record
+}
+
+func (ErrPipelineContinue) Error() string {
+	return "pipeline must continue with attached record"
+}
+
+func PipelineContinue(record slog.Record) ErrPipelineContinue {
+	return ErrPipelineContinue{record}
+}
+
 // PipelineHandler supports handling a record through multiple handlers
 type PipelineHandler []slog.Handler
-
-var PipelineHalted = fmt.Errorf("pipeline handler halted")
 
 var _ slog.Handler = PipelineHandler{}
 
@@ -31,17 +44,28 @@ func (handlers PipelineHandler) Enabled(ctx context.Context, lvl slog.Level) boo
 // The Handle method specific to a handler will only be called if the corresponding Enabled returns true.
 // If a handler in the list of handlers returns an error, the execution of subsequent handlers is skipped and an error is returned, however if the error returned is PipelineHalted, no error will be returned by PipelineHandler Handle method.
 func (handlers PipelineHandler) Handle(ctx context.Context, record slog.Record) error {
+	currentRecord := record
+
 	for _, handler := range handlers {
-		if !handler.Enabled(ctx, record.Level) {
+		// Skip disabled handler
+		if !handler.Enabled(ctx, currentRecord.Level) {
 			continue
 		}
 
-		err := handler.Handle(ctx, record)
-		if err != nil && !errors.Is(err, PipelineHalted) {
-			return fmt.Errorf("pipeline interrupted: %w", err)
-		}
-		if err != nil && errors.Is(err, PipelineHalted) {
+		err := handler.Handle(ctx, currentRecord)
+		var errPipelineContinue ErrPipelineContinue
+		// Halt, which means interrupted voluntarily, not an exception
+		if err != nil && errors.Is(err, ErrPipelineHalted) {
 			return nil
+		}
+		// Continue, which means continue pipeline with modified record
+		if err != nil && errors.As(err, &errPipelineContinue) {
+			currentRecord = errPipelineContinue.Record
+			continue
+		}
+		// Interrupt, which means **exceptional**
+		if err != nil {
+			return fmt.Errorf("%w %w", ErrPipelineInterrupted, err)
 		}
 	}
 

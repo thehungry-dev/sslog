@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+exec go run cmd/sslog-sample/main.go

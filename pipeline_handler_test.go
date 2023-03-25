@@ -87,7 +87,7 @@ func TestPipelineHandlerHandle(t *testing.T) {
 	})
 
 	t.Run("skips following handlers when at least one is halted without returning error", func(t *testing.T) {
-		mockHandlerErr := sslog.MockHandler{HandleError: sslog.PipelineHalted, Active: true}
+		mockHandlerErr := sslog.MockHandler{HandleError: sslog.ErrPipelineHalted, Active: true}
 		mockHandler := sslog.ActiveMockHandler()
 		pipeline := sslog.PipelineHandler{&mockHandlerErr, mockHandler}
 
