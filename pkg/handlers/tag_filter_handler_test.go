@@ -1,11 +1,11 @@
-package sslog_test
+package handlers_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/thehungry-dev/sslog"
 	"github.com/thehungry-dev/sslog/pkg/ctrls"
+	"github.com/thehungry-dev/sslog/pkg/handlers"
 )
 
 func TestTagFilterHandlerHandle(t *testing.T) {
@@ -13,9 +13,9 @@ func TestTagFilterHandlerHandle(t *testing.T) {
 
 	t.Run("continues pipeline when filter matches record tags", func(t *testing.T) {
 		record := ctrls.RecordExample()
-		mockHandler := sslog.ActiveMockHandler()
+		mockHandler := handlers.ActiveMockHandler()
 		tagFilterHandler := ctrls.TagFilterHandlerMatchingExample()
-		pipeline := sslog.PipelineHandler{tagFilterHandler, mockHandler}
+		pipeline := handlers.PipelineHandler{tagFilterHandler, mockHandler}
 		t.Logf("tag filter handler configuration: %s", tagFilterHandler.String())
 
 		pipeline.Handle(context.Background(), record)
@@ -23,7 +23,7 @@ func TestTagFilterHandlerHandle(t *testing.T) {
 		if len(mockHandler.Recordings) == 0 {
 			t.Errorf("record has been filtered out: %+v", record)
 		}
-		if mockHandler.Recordings[0].RecordingType != sslog.TrackHandle {
+		if mockHandler.Recordings[0].RecordingType != handlers.TrackHandle {
 			t.Errorf("unknown recording: %+v", mockHandler.Recordings[0])
 		}
 		if mockHandler.Recordings[0].Record.Message != record.Message {
@@ -34,9 +34,9 @@ func TestTagFilterHandlerHandle(t *testing.T) {
 
 	t.Run("halts pipeline when filter rejects record tags", func(t *testing.T) {
 		record := ctrls.RecordExample()
-		mockHandler := sslog.ActiveMockHandler()
+		mockHandler := handlers.ActiveMockHandler()
 		tagFilterHandler := ctrls.TagFilterHandlerRejectingExample()
-		pipeline := sslog.PipelineHandler{tagFilterHandler, mockHandler}
+		pipeline := handlers.PipelineHandler{tagFilterHandler, mockHandler}
 		t.Logf("tag filter handler configuration: %s", tagFilterHandler.String())
 
 		pipeline.Handle(context.Background(), record)

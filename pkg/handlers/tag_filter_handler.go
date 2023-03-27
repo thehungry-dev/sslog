@@ -1,15 +1,14 @@
-package sslog
+package handlers
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/thehungry-dev/rag"
+	"github.com/thehungry-dev/sslog"
 	"golang.org/x/exp/slices"
 	"golang.org/x/exp/slog"
 )
-
-var TagsKey string = "tags"
 
 // Filter out records that for which the TagFilter doesn't accept the tags.
 // If no tags are attached to the record, the record is treated as with an empty slice of tags.
@@ -26,7 +25,7 @@ func addAttributesToTags(tags []string, attrs ...slog.Attr) ([]string, uint) {
 
 	for _, attr := range attrs {
 		// Attribute is not the list of tags
-		if attr.Key != TagsKey {
+		if attr.Key != sslog.TagsKey {
 			continue
 		}
 
@@ -70,7 +69,7 @@ func resetRecordTags(record slog.Record, tags []string) slog.Record {
 
 	record.Attrs(func(attr slog.Attr) {
 		// Skip tags attribute
-		if attr.Key == TagsKey {
+		if attr.Key == sslog.TagsKey {
 			return
 		}
 
@@ -78,7 +77,7 @@ func resetRecordTags(record slog.Record, tags []string) slog.Record {
 	})
 
 	// Add modified tag attribute
-	newRecord.Add(TagsKey, tags)
+	newRecord.Add(sslog.TagsKey, tags)
 
 	return newRecord
 }
@@ -95,7 +94,7 @@ func (handler TagFilterHandler) Enabled(_ context.Context, _ slog.Level) bool {
 	return handler.Active
 }
 
-// Handle halts the pipeline if the record with name "sslogTags" attribute is rejected
+// Handle halts the pipeline if the record with attribute key sslog.TagsKey is rejected
 func (handler TagFilterHandler) Handle(_ context.Context, record slog.Record) error {
 	tags := getRecordTagsWithDefault(record, handler.defaultTags)
 

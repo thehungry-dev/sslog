@@ -1,4 +1,4 @@
-package sslog_test
+package handlers_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/thehungry-dev/sslog"
+	"github.com/thehungry-dev/sslog/pkg/handlers"
 	"golang.org/x/exp/slog"
 )
 
@@ -14,7 +14,7 @@ func TestPipelineHandlerEnabled(t *testing.T) {
 	t.Parallel()
 
 	t.Run("false when empty", func(t *testing.T) {
-		pipeline := sslog.PipelineHandler{}
+		pipeline := handlers.PipelineHandler{}
 
 		enabled := pipeline.Enabled(context.Background(), slog.LevelDebug)
 
@@ -24,9 +24,9 @@ func TestPipelineHandlerEnabled(t *testing.T) {
 	})
 
 	t.Run("false when all handlers Enabled return false", func(t *testing.T) {
-		mockHandler1 := &sslog.MockHandler{Active: false}
-		mockHandler2 := &sslog.MockHandler{Active: false}
-		pipeline := sslog.PipelineHandler{mockHandler1, mockHandler2}
+		mockHandler1 := &handlers.MockHandler{Active: false}
+		mockHandler2 := &handlers.MockHandler{Active: false}
+		pipeline := handlers.PipelineHandler{mockHandler1, mockHandler2}
 
 		enabled := pipeline.Enabled(context.Background(), slog.LevelDebug)
 
@@ -36,9 +36,9 @@ func TestPipelineHandlerEnabled(t *testing.T) {
 	})
 
 	t.Run("true when at least one handler is Enabled", func(t *testing.T) {
-		mockHandler1 := &sslog.MockHandler{Active: false}
-		mockHandler2 := &sslog.MockHandler{Active: true}
-		pipeline := sslog.PipelineHandler{mockHandler1, mockHandler2}
+		mockHandler1 := &handlers.MockHandler{Active: false}
+		mockHandler2 := &handlers.MockHandler{Active: true}
+		pipeline := handlers.PipelineHandler{mockHandler1, mockHandler2}
 
 		enabled := pipeline.Enabled(context.Background(), slog.LevelDebug)
 
@@ -53,9 +53,9 @@ func TestPipelineHandlerHandle(t *testing.T) {
 
 	t.Run("returns error when at least one handler returns error", func(t *testing.T) {
 		mockErr := fmt.Errorf("mock error")
-		mockHandler := sslog.ActiveMockHandler()
-		mockHandlerErr := sslog.MockHandler{HandleError: mockErr, Active: true}
-		pipeline := sslog.PipelineHandler{mockHandler, &mockHandlerErr}
+		mockHandler := handlers.ActiveMockHandler()
+		mockHandlerErr := handlers.MockHandler{HandleError: mockErr, Active: true}
+		pipeline := handlers.PipelineHandler{mockHandler, &mockHandlerErr}
 
 		err := pipeline.Handle(context.Background(), slog.Record{})
 
@@ -69,9 +69,9 @@ func TestPipelineHandlerHandle(t *testing.T) {
 
 	t.Run("skips following handlers when at least one returns error", func(t *testing.T) {
 		mockErr := fmt.Errorf("mock error")
-		mockHandlerErr := sslog.MockHandler{HandleError: mockErr, Active: true}
-		mockHandler := sslog.ActiveMockHandler()
-		pipeline := sslog.PipelineHandler{&mockHandlerErr, mockHandler}
+		mockHandlerErr := handlers.MockHandler{HandleError: mockErr, Active: true}
+		mockHandler := handlers.ActiveMockHandler()
+		pipeline := handlers.PipelineHandler{&mockHandlerErr, mockHandler}
 
 		err := pipeline.Handle(context.Background(), slog.Record{})
 
@@ -87,9 +87,9 @@ func TestPipelineHandlerHandle(t *testing.T) {
 	})
 
 	t.Run("skips following handlers when at least one is halted without returning error", func(t *testing.T) {
-		mockHandlerErr := sslog.MockHandler{HandleError: sslog.ErrPipelineHalted, Active: true}
-		mockHandler := sslog.ActiveMockHandler()
-		pipeline := sslog.PipelineHandler{&mockHandlerErr, mockHandler}
+		mockHandlerErr := handlers.MockHandler{HandleError: handlers.ErrPipelineHalted, Active: true}
+		mockHandler := handlers.ActiveMockHandler()
+		pipeline := handlers.PipelineHandler{&mockHandlerErr, mockHandler}
 
 		err := pipeline.Handle(context.Background(), slog.Record{})
 
@@ -102,9 +102,9 @@ func TestPipelineHandlerHandle(t *testing.T) {
 	})
 
 	t.Run("calls all handlers Handle when no error is returned", func(t *testing.T) {
-		mockHandler1 := sslog.ActiveMockHandler()
-		mockHandler2 := sslog.ActiveMockHandler()
-		pipeline := sslog.PipelineHandler{mockHandler1, mockHandler2}
+		mockHandler1 := handlers.ActiveMockHandler()
+		mockHandler2 := handlers.ActiveMockHandler()
+		pipeline := handlers.PipelineHandler{mockHandler1, mockHandler2}
 
 		err := pipeline.Handle(context.Background(), slog.Record{})
 
